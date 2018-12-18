@@ -10,9 +10,10 @@ import java.util.Scanner;
 import java.util.Stack;
 
 public class AStarAlgorithm {
-
-    public static void main(String args[]) {
-
+    public int n = 0;
+    
+    public void process() {
+        
         Scanner sc = new Scanner(System.in);
 
         // một node sẽ có tối đa 4 trạng thái
@@ -45,7 +46,7 @@ public class AStarAlgorithm {
             e.printStackTrace();
         }
 
-        System.out.println("Enter your choosing of heuristic: ");
+        System.out.println("Enter your choosing of heuristic: \n1. Hamming\n2. Manhattan\n3. Number of tiles at wrong row or column\n4. Euclidean");
         int flag = sc.nextInt();
 
         start.state = startState;
@@ -67,7 +68,7 @@ public class AStarAlgorithm {
         6 7 8
          */
 //        goalState.add(0);
-        for (int i = 1; i < 9; i++) {
+        for (int i = 1; i < n*n; i++) {
             goalState.add(i);
         }
         goalState.add(0);
@@ -167,7 +168,6 @@ public class AStarAlgorithm {
             if (!stack.isEmpty()) {
                 System.out.println(stack.pop());
             }
-            System.out.print("\033[H\033[2J");
         }
 
         System.out.println(count + " Nodes expanded.");
@@ -177,7 +177,7 @@ public class AStarAlgorithm {
     }
     
     // tính số lượng cặp ngược trong trạng thái khởi tạo
-    private static int getInversionOf(Node startState) {
+    private int getInversionOf(Node startState) {
         int size = startState.state.size();
         int count = 0;
         ArrayList<Integer> temp = startState.state;
@@ -192,7 +192,7 @@ public class AStarAlgorithm {
         return count;
     }
     
-    private static int hammingHeuristic(Node node, Node goal) {
+    private int hammingHeuristic(Node node, Node goal) {
         // TODO Auto-generated method stub
 
         int priority;
@@ -200,7 +200,7 @@ public class AStarAlgorithm {
 
         //Hàm Heuristic 
         //h = tổng số ô sai vị trí trong một trạng thái
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < n*n; i++) {
             if (!Objects.equals(node.state.get(i), goal.state.get(i))) {
                 count++;
             }
@@ -211,7 +211,7 @@ public class AStarAlgorithm {
         return priority;
     }
 
-    private static int manhattanHeuristic(Node node, Node goal) {
+    private int manhattanHeuristic(Node node, Node goal) {
         // TODO Auto-generated method stub
 
         int priority;
@@ -225,12 +225,12 @@ public class AStarAlgorithm {
         
         [0 1 2 3 4 5 6 7 8] 
          */
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < n*n; i++) {
             int x1, y1, x2, y2;
-            x1 = i / 3 + 1;
-            y1 = i % 3;
-            x2 = goal.state.indexOf(node.state.get(i)) / 3 + 1;
-            y2 = goal.state.indexOf(node.state.get(i)) % 3;
+            x1 = i / n + 1;
+            y1 = i % n;
+            x2 = goal.state.indexOf(node.state.get(i)) / n + 1;
+            y2 = goal.state.indexOf(node.state.get(i)) % n;
             count = count + Math.abs(x1 - x2) + Math.abs(y1 - y2);
         }
 //        for (int i = 0; i < 9; i++) {
@@ -242,17 +242,17 @@ public class AStarAlgorithm {
         return priority;
     }
 
-    private static int outOfRowAndColHeuristic(Node node, Node goal) {
+    private int outOfRowAndColHeuristic(Node node, Node goal) {
         int priority;
         int tilesOutOfRow = 0;
         int tilesOutOfCol = 0;
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < n*n; i++) {
             int x1, y1, x2, y2;
-            x1 = i / 3 + 1;
-            y1 = i % 3;
-            x2 = goal.state.indexOf(node.state.get(i)) / 3 + 1;
-            y2 = goal.state.indexOf(node.state.get(i)) % 3;
+            x1 = i / n + 1;
+            y1 = i % n;
+            x2 = goal.state.indexOf(node.state.get(i)) / n + 1;
+            y2 = goal.state.indexOf(node.state.get(i)) % n;
 
             if (x1 != x2) {
                 tilesOutOfRow += 1;
@@ -265,16 +265,16 @@ public class AStarAlgorithm {
         return priority;
     }
 
-    private static int euclideanHeuristic(Node node, Node goal) {
+    private int euclideanHeuristic(Node node, Node goal) {
         double priority;
         // tổng khoảng cách Euclidean 
         double sum = 0;
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < n*n; i++) {
             int x1, y1, x2, y2;
-            x1 = i / 3 + 1;
-            y1 = i % 3;
-            x2 = goal.state.indexOf(node.state.get(i)) / 3 + 1;
-            y2 = goal.state.indexOf(node.state.get(i)) % 3;
+            x1 = i / n + 1;
+            y1 = i % n;
+            x2 = goal.state.indexOf(node.state.get(i)) / n + 1;
+            y2 = goal.state.indexOf(node.state.get(i)) % n;
             sum += Math.sqrt(Math.pow((double) (x1 - x2), 2) + Math.pow((double) (y1 - y2), 2));
         }
 
@@ -282,7 +282,7 @@ public class AStarAlgorithm {
         return (int) priority;
     }
 
-    private static Node[] findStates(Node state) {
+    private Node[] findStates(Node state) {
         // TODO Auto-generated method stub
         // mỗi một node có thể có tối đa 4 trạng thái  
         Node state1, state2, state3, state4;
@@ -297,7 +297,7 @@ public class AStarAlgorithm {
         return states;
     }
 
-    private static Node moveRIGHT(Node node) {
+    private Node moveRIGHT(Node node) {
         // TODO Auto-generated method stub
         //vị trí của ô trống
         int space = node.state.indexOf(0);
@@ -305,7 +305,7 @@ public class AStarAlgorithm {
         int temp;
         Node childNode = new Node();
         //ô trống có thể di chuyển sang phải được là ô trống ở các vị trí khác vị trí 2, 5, 8
-        if (space != 2 && space != 5 && space != 8) {
+        if (space % n != n -1) {
             //tạo ra một bản sao của trạng thái state của node đang xét
             childState = (ArrayList<Integer>) node.state.clone();
             //trong childState, lấy phần tử ở bên phải của ô trống
@@ -327,14 +327,14 @@ public class AStarAlgorithm {
     }
 
     // các hàm phía sau đây tương tự như hàm moveRIGHT
-    private static Node moveLEFT(Node node) {
+    private Node moveLEFT(Node node) {
         // TODO Auto-generated method stub
         int space = node.state.indexOf(0);
         ArrayList<Integer> childState;
         int temp;
         Node childNode = new Node();
 
-        if (space != 0 && space != 3 && space != 6) {
+        if (space % n != 0) {
             childState = (ArrayList<Integer>) node.state.clone();
             temp = childState.get(space - 1);
             childState.set(space - 1, 0);
@@ -349,17 +349,17 @@ public class AStarAlgorithm {
         }
     }
 
-    private static Node moveDOWN(Node node) {
+    private Node moveDOWN(Node node) {
         // TODO Auto-generated method stub
         int space = node.state.indexOf(0);
         ArrayList<Integer> childState;
         int temp;
         Node childNode = new Node();
 
-        if (space <= 5) {
+        if (space < n*(n - 1)) {
             childState = (ArrayList<Integer>) node.state.clone();
-            temp = childState.get(space + 3);
-            childState.set(space + 3, 0);
+            temp = childState.get(space + n);
+            childState.set(space + n, 0);
             childState.set(space, temp);
             childNode.state = childState;
             childNode.parent = node;
@@ -371,17 +371,17 @@ public class AStarAlgorithm {
         }
     }
 
-    private static Node moveUP(Node node) {
+    private Node moveUP(Node node) {
         // TODO Auto-generated method stub
         int space = node.state.indexOf(0);
         ArrayList<Integer> childState;
         int temp;
         Node childNode = new Node();
 
-        if (space > 2) {
+        if (space > n - 1) {
             childState = (ArrayList<Integer>) node.state.clone();
-            temp = childState.get(space - 3);
-            childState.set(space - 3, 0);
+            temp = childState.get(space - n);
+            childState.set(space - n, 0);
             childState.set(space, temp);
             childNode.state = childState;
             childNode.parent = node;
@@ -393,15 +393,23 @@ public class AStarAlgorithm {
         }
     }
 
-    private static void printStates(ArrayList<Integer> state) {
+    private void printStates(ArrayList<Integer> state) {
         for (int i = 0; i < state.size(); i++) {
 
             System.out.print(state.get(i) + " ");
-            if (((i + 1) % 3 == 0)) {
+            if (((i + 1) % n == 0)) {
                 System.out.print("\n");
             }
         }
         System.out.println();
+    }
+    
+    public static void main(String[] args) {
+        AStarAlgorithm run = new AStarAlgorithm();
+        Scanner sc = new Scanner(System.in);
+        System.out.print("Enter size of puzzle: ");
+        run.n = sc.nextInt();
+        run.process();
     }
 
 }
