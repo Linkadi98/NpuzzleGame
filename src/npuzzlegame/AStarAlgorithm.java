@@ -3,6 +3,7 @@ package npuzzlegame;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Scanner;
@@ -11,11 +12,9 @@ import java.util.Stack;
 public class AStarAlgorithm {
 
     public static void main(String args[]) {
-        
+
         Scanner sc = new Scanner(System.in);
-        
-        
-        
+
         // một node sẽ có tối đa 4 trạng thái
         Node[] states = new Node[4];
         Node goalNodeFound = new Node();
@@ -30,14 +29,14 @@ public class AStarAlgorithm {
         //tạo node khởi đầu
         Node start = new Node();
         ArrayList<Integer> startState = new ArrayList<>();
-        
+
         /*
         3 2 0 6 1 5 7 4 8
          */
         try {
             System.out.println("Start game - enter puzzle: ");
             String inputString = sc.nextLine();
-            String [] arr = inputString.split(" ");
+            String[] arr = inputString.split(" ");
             for (String string : arr) {
                 int block = Integer.parseInt(string);
                 startState.add(block);
@@ -45,17 +44,20 @@ public class AStarAlgorithm {
         } catch (NumberFormatException e) {
             e.printStackTrace();
         }
-        
+
         System.out.println("Enter your choosing of heuristic: ");
         int flag = sc.nextInt();
-        
 
         start.state = startState;
         start.parent = null;
         start.move = null;
         start.priority = 0;
         start.distance = -1;
-
+        
+        if (getInversionOf(start) % 2 != 0) {
+            System.out.println("Can not solve this puzzle");
+            return;
+        }
         //tạo node đích
         Node goal = new Node();
         ArrayList<Integer> goalState = new ArrayList<>();
@@ -64,19 +66,19 @@ public class AStarAlgorithm {
         3 4 5 
         6 7 8
          */
-
+//        goalState.add(0);
         for (int i = 1; i < 9; i++) {
             goalState.add(i);
         }
-        
         goalState.add(0);
+        
 
         //khởi tạo node đích
         goal.state = goalState;
         goal.parent = null;
         goal.distance = -1;
         goal.move = null;
-        
+
         final long startTime = System.nanoTime();
         // Thuật toán A* 
         Comparator<Node> comparator = new NodeCompare();
@@ -89,7 +91,7 @@ public class AStarAlgorithm {
         visited.add(start.state);
         // nếu hàng đợi không rỗng
         while (!pQ.isEmpty()) {
-            
+
             count++;
             // lấy ra phần tử đầu tiên và remove khỏi hàng đợi
             current = pQ.remove();
@@ -104,7 +106,7 @@ public class AStarAlgorithm {
                         goalNodeFound = states[i];
                         break;
                     } else {
-                        // nếu trong list close không chứa trạng thái states[i]
+                        // nếu trong list close không chứa trạng thái states[i].state
                         if (!visited.contains(states[i].state)) {
                             // trạng thái i sẽ có khoảng cách bằng khoảng cách của node hiện tại đang xét + 1
                             states[i].distance = current.distance + 1;
@@ -112,14 +114,25 @@ public class AStarAlgorithm {
                             visited.add(states[i].state);
                             // tính toán chi phí 
                             // mục đích để sắp xếp chi phí ít nhất sẽ được xuất hiện ở đầu hàng đợi -> đây là mục đích của thuật toán A*: lấy ra trạng thái tốn ít chi phí nhất
-                            if(flag == 1)
-                                states[i].priority = hammingHeuristic(states[i], goal);
-                            else 
-                                states[i].priority = manhattanHeuristic(states[i], goal);
+                            switch (flag) {
+                                case 1:
+                                    states[i].priority = hammingHeuristic(states[i], goal);
+                                    break;
+                                case 2:
+                                    states[i].priority = manhattanHeuristic(states[i], goal);
+                                    break;
+                                case 3:
+                                    states[i].priority = outOfRowAndColHeuristic(states[i], goal);
+                                    break;
+                                case 4:
+                                    states[i].priority = euclideanHeuristic(states[i], goal);
+                                    break;
+                            }
+                            
                             // đưa vào list Open
 //                            System.out.println(states[i].priority);
                             pQ.add(states[i]);
-                            System.out.println(pQ.peek().priority);
+
                         }
                     }
                 }
@@ -130,8 +143,7 @@ public class AStarAlgorithm {
             }
 
         }
-        
-        
+
         //truy vết hành động của ô trống
         while (goalNodeFound.parent != null) {
             if (goalNodeFound.move != null) {
@@ -140,20 +152,22 @@ public class AStarAlgorithm {
             tableStates.push(goalNodeFound.state);
             goalNodeFound = goalNodeFound.parent;
         }
-        
+
         tableStates.push(startState);
         //số bước đi
         int step = stack.size();
         //in các bước đi của ô trống 
         while (true) {
-            if(stack.isEmpty() && tableStates.isEmpty())
+            if (stack.isEmpty() && tableStates.isEmpty()) {
                 break;
-            if(!tableStates.isEmpty())
-                
+            }
+            if (!tableStates.isEmpty()) {
                 printStates(tableStates.pop());
-            if(!stack.isEmpty())
+            }
+            if (!stack.isEmpty()) {
                 System.out.println(stack.pop());
-                System.out.print("\033[H\033[2J");
+            }
+            System.out.print("\033[H\033[2J");
         }
 
         System.out.println(count + " Nodes expanded.");
@@ -161,7 +175,23 @@ public class AStarAlgorithm {
         final long duration = System.nanoTime() - startTime;
         System.out.println(duration / 1000000000.0 + " s");
     }
-
+    
+    // tính số lượng cặp ngược trong trạng thái khởi tạo
+    private static int getInversionOf(Node startState) {
+        int size = startState.state.size();
+        int count = 0;
+        ArrayList<Integer> temp = startState.state;
+        for (int i = 0; i < size - 1; i++) {
+            for (int j = i + 1; j < size; j++) {
+                
+                if(temp.get(i) != 0 && temp.get(j) != 0 && temp.get(i) > temp.get(j))
+                    count++;
+            }
+        }
+        System.out.println(count);
+        return count;
+    }
+    
     private static int hammingHeuristic(Node node, Node goal) {
         // TODO Auto-generated method stub
 
@@ -175,7 +205,7 @@ public class AStarAlgorithm {
                 count++;
             }
         }
-        
+
         // f = g + h
         priority = node.distance + count;
         return priority;
@@ -189,13 +219,67 @@ public class AStarAlgorithm {
         int index;
         //hàm Heuristic
         //h = tổng khoảng cách Manhattan giữa vị trí hiện tại và vị trí đích của các ô vuông
+
+        /* 
+        [3 2 0 6 1 5 7 4 8] -> node hiện tại 
+        
+        [0 1 2 3 4 5 6 7 8] 
+         */
         for (int i = 0; i < 9; i++) {
-            index = goal.state.indexOf(node.state.get(i));
-            count = count + Math.abs(index - i);
+            int x1, y1, x2, y2;
+            x1 = i / 3 + 1;
+            y1 = i % 3;
+            x2 = goal.state.indexOf(node.state.get(i)) / 3 + 1;
+            y2 = goal.state.indexOf(node.state.get(i)) % 3;
+            count = count + Math.abs(x1 - x2) + Math.abs(y1 - y2);
+        }
+//        for (int i = 0; i < 9; i++) {
+//            index = goal.state.indexOf(node.state.get(i));
+//            count = count + Math.abs(index - i);
+//        }
+
+        priority = node.distance + count;
+        return priority;
+    }
+
+    private static int outOfRowAndColHeuristic(Node node, Node goal) {
+        int priority;
+        int tilesOutOfRow = 0;
+        int tilesOutOfCol = 0;
+
+        for (int i = 0; i < 9; i++) {
+            int x1, y1, x2, y2;
+            x1 = i / 3 + 1;
+            y1 = i % 3;
+            x2 = goal.state.indexOf(node.state.get(i)) / 3 + 1;
+            y2 = goal.state.indexOf(node.state.get(i)) % 3;
+
+            if (x1 != x2) {
+                tilesOutOfRow += 1;
+            }
+            if (y1 != y2) {
+                tilesOutOfCol += 1;
+            }
+        }
+        priority = node.distance + tilesOutOfCol + tilesOutOfRow;
+        return priority;
+    }
+
+    private static int euclideanHeuristic(Node node, Node goal) {
+        double priority;
+        // tổng khoảng cách Euclidean 
+        double sum = 0;
+        for (int i = 0; i < 9; i++) {
+            int x1, y1, x2, y2;
+            x1 = i / 3 + 1;
+            y1 = i % 3;
+            x2 = goal.state.indexOf(node.state.get(i)) / 3 + 1;
+            y2 = goal.state.indexOf(node.state.get(i)) % 3;
+            sum += Math.sqrt(Math.pow((double) (x1 - x2), 2) + Math.pow((double) (y1 - y2), 2));
         }
 
-        priority = node.distance + 2 * count;
-        return priority;
+        priority = node.distance + sum;
+        return (int) priority;
     }
 
     private static Node[] findStates(Node state) {
@@ -311,7 +395,7 @@ public class AStarAlgorithm {
 
     private static void printStates(ArrayList<Integer> state) {
         for (int i = 0; i < state.size(); i++) {
-            
+
             System.out.print(state.get(i) + " ");
             if (((i + 1) % 3 == 0)) {
                 System.out.print("\n");
